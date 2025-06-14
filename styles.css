@@ -127,10 +127,12 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 20px;
+    gap: 10px;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease;
+    top: -50%;
+    left: -50%;
 }
 
 .wall.active {
@@ -139,9 +141,9 @@ body {
 
 .line {
     white-space: nowrap;
-    font-size: 2em;
+    font-size: 1.5em;
     animation: scroll 10s linear infinite;
-    color: rgba(255, 215, 0, 0.3);
+    color: rgba(255, 255, 255, 0.3);
 }
 
 /* Delays for the staggered wall effect */
@@ -149,6 +151,11 @@ body {
 .line:nth-child(3) { animation-delay: -4s; }
 .line:nth-child(4) { animation-delay: -6s; }
 .line:nth-child(5) { animation-delay: -8s; }
+.line:nth-child(6) { animation-delay: -1s; }
+.line:nth-child(7) { animation-delay: -3s; }
+.line:nth-child(8) { animation-delay: -5s; }
+.line:nth-child(9) { animation-delay: -7s; }
+.line:nth-child(10) { animation-delay: -9s; }
 
 @keyframes scroll {
     0% { transform: translateX(-100%); }
