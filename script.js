@@ -10,6 +10,9 @@ class TouchRandomizer {
         this.ringColor = '#4CAF50'; // Green ring for touches
         this.selectedColor = '#FFD700'; // Yellow for selected touch
         this.radius = 50;
+        this.pulseScale = 1;
+        this.pulseDirection = 0.01;
+        this.selectionHighlightTimeout = null;
 
         this.resizeCanvas();
         this.setupEventListeners();
@@ -34,7 +37,9 @@ class TouchRandomizer {
             this.touches.set(touch.identifier, {
                 x: touch.clientX,
                 y: touch.clientY,
-                isSelected: false
+                isSelected: false,
+                scale: 0.8, // Start with a smaller scale for animation
+                alpha: 0.5  // Start with lower opacity for animation
             });
         });
         this.startSelectionTimer();
@@ -44,8 +49,9 @@ class TouchRandomizer {
         e.preventDefault();
         Array.from(e.changedTouches).forEach(touch => {
             if (this.touches.has(touch.identifier)) {
-                this.touches.get(touch.identifier).x = touch.clientX;
-                this.touches.get(touch.identifier).y = touch.clientY;
+                const touchData = this.touches.get(touch.identifier);
+                touchData.x = touch.clientX;
+                touchData.y = touch.clientY;
             }
         });
     }
@@ -57,6 +63,7 @@ class TouchRandomizer {
         });
         if (this.touches.size === 0) {
             this.clearSelectionTimer();
+            this.clearSelectionHighlight();
         }
     }
 
@@ -78,6 +85,14 @@ class TouchRandomizer {
         this.selectedTouch = null;
     }
 
+    clearSelectionHighlight() {
+        if (this.selectionHighlightTimeout) {
+            clearTimeout(this.selectionHighlightTimeout);
+            this.selectionHighlightTimeout = null;
+        }
+        this.selectedTouch = null;
+    }
+
     startSelectionAnimation() {
         if (this.touches.size === 0) return;
         
@@ -92,6 +107,10 @@ class TouchRandomizer {
             if (iterations >= maxIterations) {
                 this.isSelecting = false;
                 this.selectedTouch = touchIds[Math.floor(Math.random() * touchIds.length)];
+                // Keep the selection highlighted for 2 seconds
+                this.selectionHighlightTimeout = setTimeout(() => {
+                    this.clearSelectionHighlight();
+                }, 2000);
                 return;
             }
 
@@ -105,9 +124,19 @@ class TouchRandomizer {
         animate();
     }
 
-    drawCircle(x, y, color, isSelected = false) {
+    drawCircle(x, y, color, isSelected = false, touchData) {
+        this.ctx.save();
+        
+        // Add glow effect for selected touch
+        if (isSelected) {
+            this.ctx.shadowColor = this.selectedColor;
+            this.ctx.shadowBlur = 20;
+        }
+
+        // Draw the main circle
         this.ctx.beginPath();
-        this.ctx.arc(x, y, this.radius, 0, Math.PI * 2);
+        const scale = touchData ? touchData.scale : 1;
+        this.ctx.arc(x, y, this.radius * scale, 0, Math.PI * 2);
         this.ctx.strokeStyle = color;
         this.ctx.lineWidth = 3;
         this.ctx.stroke();
@@ -116,15 +145,41 @@ class TouchRandomizer {
             this.ctx.fillStyle = this.selectedColor;
             this.ctx.fill();
         }
+
+        // Draw a subtle pulse effect
+        if (touchData) {
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, this.radius * (scale + 0.2), 0, Math.PI * 2);
+            this.ctx.strokeStyle = color;
+            this.ctx.globalAlpha = 0.3;
+            this.ctx.stroke();
+        }
+
+        this.ctx.restore();
     }
 
     animate() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        this.touches.forEach((touch, id) => {
+        // Update touch animations
+        this.touches.forEach((touchData, id) => {
+            // Animate scale and opacity
+            if (touchData.scale < 1) {
+                touchData.scale += 0.1;
+            }
+            if (touchData.alpha < 1) {
+                touchData.alpha += 0.1;
+            }
+            
             const isSelected = this.isSelecting && this.selectedTouch === id;
-            this.drawCircle(touch.x, touch.y, this.ringColor, isSelected);
+            this.drawCircle(touchData.x, touchData.y, this.ringColor, isSelected, touchData);
         });
+
+        // Update pulse animation
+        this.pulseScale += this.pulseDirection;
+        if (this.pulseScale > 1.1 || this.pulseScale < 0.9) {
+            this.pulseDirection *= -1;
+        }
 
         this.animationFrame = requestAnimationFrame(() => this.animate());
     }
