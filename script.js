@@ -1,33 +1,26 @@
 class TouchRandomizer {
     constructor() {
+        // Canvas setup
         this.canvas = document.getElementById('touchCanvas');
         this.ctx = this.canvas.getContext('2d');
+        this.resizeCanvas();
+
+        // Touch tracking
         this.touches = new Map();
         this.selectedTouch = null;
-        this.isSelecting = false;
-        this.selectionTimeout = null;
-        this.animationFrame = null;
-        this.ringColor = 'rgba(76, 175, 80, 0.8)'; // Semi-transparent green
-        this.selectedColor = 'rgba(255, 215, 0, 0.9)'; // Semi-transparent yellow
-        this.radius = 50;
-        this.pulseScale = 1;
-        this.pulseDirection = 0.005; // Slower pulse
-        this.selectionHighlightTimeout = null;
-        this.selectionFadeTimeout = null;
-        this.restartTimeout = null;
-        this.initialTouchCount = 0;
-        this.isFading = false;
-        this.fadeProgress = 1;
-        this.screenGlowProgress = 0;
-        this.screenGlowDirection = 1;
-        this.screenGlowCount = 0;
+        
+        // Animation states
         this.isScreenGlowing = false;
-        this.cyclingIndex = 0;
-        this.cyclingIterations = 0;
-        this.maxCyclingIterations = 10;
-        this.cyclingDelay = 200;
+        this.screenGlowAlpha = 0;
+        this.glowDirection = 1;
+        this.glowCount = 0;
+        
+        // Timers
+        this.initialTimer = null;
+        this.selectionTimer = null;
+        this.fadeTimer = null;
 
-        this.resizeCanvas();
+        // Setup
         this.setupEventListeners();
         this.setupFullscreen();
         this.setupRefresh();
@@ -48,42 +41,13 @@ class TouchRandomizer {
 
     setupFullscreen() {
         const fullscreenBtn = document.getElementById('fullscreenBtn');
-        
-        // Check if fullscreen is supported
-        const isFullscreenSupported = document.fullscreenEnabled || 
-                                    document.webkitFullscreenEnabled || 
-                                    document.mozFullScreenEnabled ||
-                                    document.msFullscreenEnabled;
-
-        if (isFullscreenSupported) {
+        if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
             fullscreenBtn.style.display = 'flex';
-            
             fullscreenBtn.addEventListener('click', () => {
-                if (!document.fullscreenElement && 
-                    !document.webkitFullscreenElement && 
-                    !document.mozFullScreenElement &&
-                    !document.msFullscreenElement) {
-                    
-                    const element = document.documentElement;
-                    if (element.requestFullscreen) {
-                        element.requestFullscreen();
-                    } else if (element.webkitRequestFullscreen) {
-                        element.webkitRequestFullscreen();
-                    } else if (element.mozRequestFullScreen) {
-                        element.mozRequestFullScreen();
-                    } else if (element.msRequestFullscreen) {
-                        element.msRequestFullscreen();
-                    }
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
                 } else {
-                    if (document.exitFullscreen) {
-                        document.exitFullscreen();
-                    } else if (document.webkitExitFullscreen) {
-                        document.webkitExitFullscreen();
-                    } else if (document.mozCancelFullScreen) {
-                        document.mozCancelFullScreen();
-                    } else if (document.msExitFullscreen) {
-                        document.msExitFullscreen();
-                    }
+                    document.exitFullscreen();
                 }
             });
         } else {
@@ -93,9 +57,7 @@ class TouchRandomizer {
 
     setupRefresh() {
         const refreshBtn = document.getElementById('refreshBtn');
-        refreshBtn.addEventListener('click', () => {
-            this.clearAllCircles();
-        });
+        refreshBtn.addEventListener('click', () => this.reset());
     }
 
     handleTouchStart(e) {
@@ -103,14 +65,14 @@ class TouchRandomizer {
         Array.from(e.changedTouches).forEach(touch => {
             this.touches.set(touch.identifier, {
                 x: touch.clientX,
-                y: touch.clientY,
-                isSelected: false,
-                scale: 0.8, // Start with a smaller scale for animation
-                alpha: 0.5  // Start with lower opacity for animation
+                y: touch.clientY
             });
         });
-        this.initialTouchCount = this.touches.size;
-        this.startSelectionTimer();
+
+        // Start the initial timer if this is the first touch
+        if (this.touches.size === e.changedTouches.length) {
+            this.startInitialTimer();
+        }
     }
 
     handleTouchMove(e) {
@@ -126,198 +88,115 @@ class TouchRandomizer {
 
     handleTouchEnd(e) {
         e.preventDefault();
-        const previousTouchCount = this.touches.size;
-        
         Array.from(e.changedTouches).forEach(touch => {
             this.touches.delete(touch.identifier);
         });
 
-        // If a finger is removed during screen glow, fade out the glow
-        if (this.isScreenGlowing) {
-            this.isScreenGlowing = false;
-            this.screenGlowProgress = 0;
-            this.screenGlowCount = 0;
-            this.clearAllTimers();
-            if (this.touches.size > 0) {
-                this.startSelectionTimer();
-            }
-            return;
-        }
-
-        // If a finger is removed during or after selection, restart the process
-        if (this.selectedTouch !== null && this.touches.size < previousTouchCount) {
-            this.clearAllTimers();
-            if (this.touches.size > 0) {
-                this.startSelectionTimer();
-            }
-        }
-
-        if (this.touches.size === 0) {
-            this.clearAllTimers();
+        // Reset everything if a finger is lifted
+        this.reset();
+        
+        // Restart if there are still fingers
+        if (this.touches.size > 0) {
+            this.startInitialTimer();
         }
     }
 
-    clearAllTimers() {
-        if (this.selectionTimeout) {
-            clearTimeout(this.selectionTimeout);
-            this.selectionTimeout = null;
-        }
-        if (this.selectionHighlightTimeout) {
-            clearTimeout(this.selectionHighlightTimeout);
-            this.selectionHighlightTimeout = null;
-        }
-        if (this.selectionFadeTimeout) {
-            clearTimeout(this.selectionFadeTimeout);
-            this.selectionFadeTimeout = null;
-        }
-        if (this.restartTimeout) {
-            clearTimeout(this.restartTimeout);
-            this.restartTimeout = null;
-        }
-        this.selectedTouch = null;
-        this.isFading = false;
-        this.fadeProgress = 1;
-        this.isScreenGlowing = false;
-        this.screenGlowProgress = 0;
-        this.screenGlowCount = 0;
-    }
-
-    startSelectionTimer() {
-        this.clearAllTimers();
-        this.selectionTimeout = setTimeout(() => {
+    startInitialTimer() {
+        this.clearTimers();
+        this.initialTimer = setTimeout(() => {
             this.startScreenGlow();
         }, 2000);
     }
 
     startScreenGlow() {
-        if (this.touches.size === 0) return;
-        
         this.isScreenGlowing = true;
-        this.screenGlowCount = 0;
-        this.screenGlowProgress = 0;
-        this.screenGlowDirection = 1;
-        
-        const glowPulse = () => {
-            if (this.screenGlowCount >= 3) {
+        this.glowCount = 0;
+        this.screenGlowAlpha = 0;
+        this.glowDirection = 1;
+        this.animateGlow();
+    }
+
+    animateGlow() {
+        if (!this.isScreenGlowing) return;
+
+        this.screenGlowAlpha += 0.05 * this.glowDirection;
+
+        if (this.screenGlowAlpha >= 1) {
+            this.screenGlowAlpha = 1;
+            this.glowDirection = -1;
+        } else if (this.screenGlowAlpha <= 0) {
+            this.screenGlowAlpha = 0;
+            this.glowDirection = 1;
+            this.glowCount++;
+
+            if (this.glowCount >= 3) {
                 this.isScreenGlowing = false;
                 this.selectRandomTouch();
                 return;
             }
+        }
 
-            this.screenGlowProgress += 0.05 * this.screenGlowDirection;
-            
-            if (this.screenGlowProgress >= 1) {
-                this.screenGlowProgress = 1;
-                this.screenGlowDirection = -1;
-            } else if (this.screenGlowProgress <= 0) {
-                this.screenGlowProgress = 0;
-                this.screenGlowDirection = 1;
-                this.screenGlowCount++;
-            }
-
-            requestAnimationFrame(glowPulse);
-        };
-
-        requestAnimationFrame(glowPulse);
+        requestAnimationFrame(() => this.animateGlow());
     }
 
     selectRandomTouch() {
         if (this.touches.size === 0) return;
-        
+
         const touchIds = Array.from(this.touches.keys());
         this.selectedTouch = touchIds[Math.floor(Math.random() * touchIds.length)];
-        this.isFading = false;
-        this.fadeProgress = 1;
-        
-        // Keep selection highlighted for exactly 3 seconds
-        this.selectionHighlightTimeout = setTimeout(() => {
-            // Start fade out
-            this.isFading = true;
-            this.fadeProgress = 1;
-            
-            const fadeOut = () => {
-                if (this.fadeProgress > 0) {
-                    this.fadeProgress -= 0.02;
-                    requestAnimationFrame(fadeOut);
-                } else {
-                    this.selectedTouch = null;
-                    this.isFading = false;
-                    
-                    // Wait 6 seconds before next selection
-                    if (this.touches.size > 0) {
-                        this.restartTimeout = setTimeout(() => {
-                            this.startSelectionTimer();
-                        }, 6000);
-                    }
+
+        // Keep selection for 3 seconds
+        this.selectionTimer = setTimeout(() => {
+            this.selectedTouch = null;
+            this.fadeTimer = setTimeout(() => {
+                if (this.touches.size > 0) {
+                    this.startInitialTimer();
                 }
-            };
-            
-            requestAnimationFrame(fadeOut);
+            }, 1000);
         }, 3000);
     }
 
-    drawCircle(x, y, color, isSelected = false, touchData) {
+    clearTimers() {
+        if (this.initialTimer) clearTimeout(this.initialTimer);
+        if (this.selectionTimer) clearTimeout(this.selectionTimer);
+        if (this.fadeTimer) clearTimeout(this.fadeTimer);
+    }
+
+    reset() {
+        this.clearTimers();
+        this.isScreenGlowing = false;
+        this.screenGlowAlpha = 0;
+        this.glowCount = 0;
+        this.selectedTouch = null;
+    }
+
+    drawCircle(x, y, isSelected) {
         this.ctx.save();
         
-        // Enhanced glow effect
         if (isSelected) {
-            const glowIntensity = this.isFading ? this.fadeProgress : 1;
-            
-            // Draw outer glow
+            // Draw glow layers
             this.ctx.beginPath();
-            this.ctx.arc(x, y, this.radius * 1.8, 0, Math.PI * 2);
-            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.15 * glowIntensity})`;
+            this.ctx.arc(x, y, 90, 0, Math.PI * 2);
+            this.ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
             this.ctx.fill();
-            
-            // Draw middle glow
+
             this.ctx.beginPath();
-            this.ctx.arc(x, y, this.radius * 1.4, 0, Math.PI * 2);
-            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.3 * glowIntensity})`;
+            this.ctx.arc(x, y, 70, 0, Math.PI * 2);
+            this.ctx.fillStyle = 'rgba(255, 215, 0, 0.4)';
             this.ctx.fill();
-            
-            // Draw inner glow
+
+            // Main circle
             this.ctx.beginPath();
-            this.ctx.arc(x, y, this.radius * 1.1, 0, Math.PI * 2);
-            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.5 * glowIntensity})`;
+            this.ctx.arc(x, y, 50, 0, Math.PI * 2);
+            this.ctx.fillStyle = 'rgba(255, 215, 0, 0.9)';
             this.ctx.fill();
-            
-            // Main circle glow
-            this.ctx.shadowColor = this.selectedColor;
-            this.ctx.shadowBlur = 50 * glowIntensity;
-            this.ctx.shadowOffsetX = 0;
-            this.ctx.shadowOffsetY = 0;
         } else {
-            this.ctx.shadowColor = color;
-            this.ctx.shadowBlur = 20;
-            this.ctx.shadowOffsetX = 0;
-            this.ctx.shadowOffsetY = 0;
-        }
-
-        // Draw the main circle
-        this.ctx.beginPath();
-        const scale = touchData ? touchData.scale : 1;
-        this.ctx.arc(x, y, this.radius * scale, 0, Math.PI * 2);
-        this.ctx.strokeStyle = color;
-        this.ctx.lineWidth = 2;
-        this.ctx.stroke();
-        
-        if (isSelected) {
-            const fillColor = this.isFading ? 
-                `rgba(255, 215, 0, ${0.9 * this.fadeProgress})` : 
-                this.selectedColor;
-            this.ctx.fillStyle = fillColor;
-            this.ctx.fill();
-        }
-
-        // Draw multiple subtle pulse effects for non-selected touches
-        if (touchData && !isSelected) {
-            for (let i = 1; i <= 3; i++) {
-                this.ctx.beginPath();
-                this.ctx.arc(x, y, this.radius * (scale + 0.1 * i), 0, Math.PI * 2);
-                this.ctx.strokeStyle = color;
-                this.ctx.globalAlpha = 0.15 / i;
-                this.ctx.stroke();
-            }
+            // Regular circle
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, 50, 0, Math.PI * 2);
+            this.ctx.strokeStyle = 'rgba(76, 175, 80, 0.8)';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
         }
 
         this.ctx.restore();
@@ -326,52 +205,20 @@ class TouchRandomizer {
     animate() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Draw screen glow if active
+        // Draw screen glow
         if (this.isScreenGlowing) {
             this.ctx.save();
-            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.2 * this.screenGlowProgress})`;
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.2 * this.screenGlowAlpha})`;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             this.ctx.restore();
         }
 
         // Draw touches
         this.touches.forEach((touchData, id) => {
-            if (touchData.scale < 1) {
-                touchData.scale += 0.05;
-            }
-            if (touchData.alpha < 1) {
-                touchData.alpha += 0.05;
-            }
-            
-            const isSelected = this.selectedTouch === id;
-            this.drawCircle(touchData.x, touchData.y, this.ringColor, isSelected, touchData);
+            this.drawCircle(touchData.x, touchData.y, id === this.selectedTouch);
         });
 
-        this.pulseScale += this.pulseDirection;
-        if (this.pulseScale > 1.05 || this.pulseScale < 0.95) {
-            this.pulseDirection *= -1;
-        }
-
-        this.animationFrame = requestAnimationFrame(() => this.animate());
-    }
-
-    clearAllCircles() {
-        // Clear all timers
-        this.clearAllTimers();
-        
-        // Clear all touches
-        this.touches.clear();
-        
-        // Reset all states
-        this.selectedTouch = null;
-        this.isSelecting = false;
-        this.isFading = false;
-        this.fadeProgress = 1;
-        this.cyclingIndex = 0;
-        this.cyclingIterations = 0;
-        
-        // Clear the canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        requestAnimationFrame(() => this.animate());
     }
 }
 
