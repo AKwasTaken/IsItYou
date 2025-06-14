@@ -211,8 +211,28 @@ class TouchRandomizer {
         // Enhanced glow effect
         if (isSelected) {
             const glowIntensity = this.isFading ? this.fadeProgress : 1;
+            
+            // Draw outer glow
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, this.radius * 1.8, 0, Math.PI * 2);
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.15 * glowIntensity})`;
+            this.ctx.fill();
+            
+            // Draw middle glow
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, this.radius * 1.4, 0, Math.PI * 2);
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.3 * glowIntensity})`;
+            this.ctx.fill();
+            
+            // Draw inner glow
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, this.radius * 1.1, 0, Math.PI * 2);
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.5 * glowIntensity})`;
+            this.ctx.fill();
+            
+            // Main circle glow
             this.ctx.shadowColor = this.selectedColor;
-            this.ctx.shadowBlur = 40 * glowIntensity;
+            this.ctx.shadowBlur = 50 * glowIntensity;
             this.ctx.shadowOffsetX = 0;
             this.ctx.shadowOffsetY = 0;
         } else {
@@ -220,22 +240,6 @@ class TouchRandomizer {
             this.ctx.shadowBlur = 20;
             this.ctx.shadowOffsetX = 0;
             this.ctx.shadowOffsetY = 0;
-        }
-
-        // Draw multiple glow layers for selected touch
-        if (isSelected) {
-            const glowIntensity = this.isFading ? this.fadeProgress : 1;
-            // Outer glow
-            this.ctx.beginPath();
-            this.ctx.arc(x, y, this.radius * 1.5, 0, Math.PI * 2);
-            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.1 * glowIntensity})`;
-            this.ctx.fill();
-            
-            // Middle glow
-            this.ctx.beginPath();
-            this.ctx.arc(x, y, this.radius * 1.2, 0, Math.PI * 2);
-            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.2 * glowIntensity})`;
-            this.ctx.fill();
         }
 
         // Draw the main circle
@@ -254,8 +258,8 @@ class TouchRandomizer {
             this.ctx.fill();
         }
 
-        // Draw multiple subtle pulse effects
-        if (touchData) {
+        // Draw multiple subtle pulse effects for non-selected touches
+        if (touchData && !isSelected) {
             for (let i = 1; i <= 3; i++) {
                 this.ctx.beginPath();
                 this.ctx.arc(x, y, this.radius * (scale + 0.1 * i), 0, Math.PI * 2);
