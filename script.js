@@ -14,15 +14,13 @@ class TouchRandomizer {
         this.screenGlowAlpha = 0;
         this.glowDirection = 1;
         this.glowCount = 0;
-        
-        // Selection states
-        this.isSelecting = false;
-        this.selectionAlpha = 1;
+        this.fadeProgress = 1;
         this.isFading = false;
         
         // Timers
         this.initialTimer = null;
         this.selectionTimer = null;
+        this.fadeTimer = null;
 
         // Setup
         this.setupEventListeners();
@@ -70,17 +68,14 @@ class TouchRandomizer {
 
     handleTouchStart(e) {
         e.preventDefault();
-        const currentTime = Date.now();
-        
         Array.from(e.changedTouches).forEach(touch => {
             this.touches.set(touch.identifier, {
                 x: touch.clientX,
-                y: touch.clientY,
-                timestamp: currentTime
+                y: touch.clientY
             });
         });
 
-        // Only start timer if this is a new touch session
+        // Start the initial timer if this is the first touch
         if (this.touches.size === e.changedTouches.length) {
             this.startInitialTimer();
         }
@@ -88,38 +83,25 @@ class TouchRandomizer {
 
     handleTouchMove(e) {
         e.preventDefault();
-        const currentTime = Date.now();
-        
         Array.from(e.changedTouches).forEach(touch => {
             if (this.touches.has(touch.identifier)) {
                 const touchData = this.touches.get(touch.identifier);
                 touchData.x = touch.clientX;
                 touchData.y = touch.clientY;
-                touchData.timestamp = currentTime;
             }
         });
     }
 
     handleTouchEnd(e) {
         e.preventDefault();
-        const currentTime = Date.now();
-        
-        // Remove ended touches
         Array.from(e.changedTouches).forEach(touch => {
             this.touches.delete(touch.identifier);
         });
 
-        // Reset if a finger is lifted
+        // Reset everything if a finger is lifted
         this.reset();
         
-        // Clean up any stale touches (older than 1 second)
-        this.touches.forEach((touchData, id) => {
-            if (currentTime - touchData.timestamp > 1000) {
-                this.touches.delete(id);
-            }
-        });
-
-        // Restart if there are still valid touches
+        // Restart if there are still fingers
         if (this.touches.size > 0) {
             this.startInitialTimer();
         }
@@ -168,43 +150,37 @@ class TouchRandomizer {
 
         const touchIds = Array.from(this.touches.keys());
         this.selectedTouch = touchIds[Math.floor(Math.random() * touchIds.length)];
-        this.isSelecting = true;
-        this.selectionAlpha = 1;
         this.isFading = false;
+        this.fadeProgress = 1;
 
+        // Keep selection for 3 seconds
         this.selectionTimer = setTimeout(() => {
-            this.startFadeOut();
-        }, 3000);
-    }
-
-    startFadeOut() {
-        this.isFading = true;
-        this.animateFadeOut();
-    }
-
-    animateFadeOut() {
-        if (!this.isFading) return;
-
-        this.selectionAlpha -= 0.02;
-
-        if (this.selectionAlpha <= 0) {
-            this.selectionAlpha = 0;
-            this.isFading = false;
-            this.selectedTouch = null;
-            this.isSelecting = false;
+            this.isFading = true;
+            this.fadeProgress = 1;
             
-            if (this.touches.size > 0) {
-                this.startInitialTimer();
-            }
-            return;
-        }
-
-        requestAnimationFrame(() => this.animateFadeOut());
+            const fadeOut = () => {
+                if (this.fadeProgress > 0) {
+                    this.fadeProgress -= 0.02;
+                    requestAnimationFrame(fadeOut);
+                } else {
+                    this.selectedTouch = null;
+                    this.isFading = false;
+                    this.fadeProgress = 1;
+                    
+                    if (this.touches.size > 0) {
+                        this.startInitialTimer();
+                    }
+                }
+            };
+            
+            requestAnimationFrame(fadeOut);
+        }, 3000);
     }
 
     clearTimers() {
         if (this.initialTimer) clearTimeout(this.initialTimer);
         if (this.selectionTimer) clearTimeout(this.selectionTimer);
+        if (this.fadeTimer) clearTimeout(this.fadeTimer);
     }
 
     reset() {
@@ -213,53 +189,38 @@ class TouchRandomizer {
         this.screenGlowAlpha = 0;
         this.glowCount = 0;
         this.selectedTouch = null;
-        this.isSelecting = false;
-        this.selectionAlpha = 1;
         this.isFading = false;
+        this.fadeProgress = 1;
     }
 
     drawCircle(x, y, isSelected) {
         this.ctx.save();
         
         if (isSelected) {
-            const alpha = this.isFading ? this.selectionAlpha : 1;
+            const glowIntensity = this.isFading ? this.fadeProgress : 1;
             
-            // Outer glow
+            // Draw glow layers
             this.ctx.beginPath();
             this.ctx.arc(x, y, 90, 0, Math.PI * 2);
-            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.15 * alpha})`;
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.2 * glowIntensity})`;
             this.ctx.fill();
 
-            // Middle glow
             this.ctx.beginPath();
             this.ctx.arc(x, y, 70, 0, Math.PI * 2);
-            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.3 * alpha})`;
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.4 * glowIntensity})`;
             this.ctx.fill();
 
-            // Inner glow
+            // Main circle
             this.ctx.beginPath();
             this.ctx.arc(x, y, 50, 0, Math.PI * 2);
-            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.6 * alpha})`;
-            this.ctx.fill();
-
-            // Bright center
-            this.ctx.beginPath();
-            this.ctx.arc(x, y, 30, 0, Math.PI * 2);
-            this.ctx.fillStyle = `rgba(255, 255, 255, ${0.3 * alpha})`;
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.9 * glowIntensity})`;
             this.ctx.fill();
         } else {
-            // Regular circle with subtle glow
+            // Regular circle
             this.ctx.beginPath();
             this.ctx.arc(x, y, 50, 0, Math.PI * 2);
             this.ctx.strokeStyle = 'rgba(76, 175, 80, 0.8)';
             this.ctx.lineWidth = 2;
-            this.ctx.stroke();
-
-            // Subtle outer glow
-            this.ctx.beginPath();
-            this.ctx.arc(x, y, 55, 0, Math.PI * 2);
-            this.ctx.strokeStyle = 'rgba(76, 175, 80, 0.3)';
-            this.ctx.lineWidth = 1;
             this.ctx.stroke();
         }
 
