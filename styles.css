@@ -20,18 +20,25 @@ body {
     touch-action: none;
 }
 
-.title-container {
+.title {
     position: fixed;
-    top: 20px;
-    left: 20px;
+    top: 25px;
+    left: 25px;
     z-index: 1000;
-    color: white;
-    font-size: 24px;
-    letter-spacing: 1px;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-    display: flex;
-    align-items: baseline;
-    gap: 2px;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 28px;
+    font-weight: 300;
+    letter-spacing: 2px;
+    text-shadow: 
+        0 0 20px rgba(255, 255, 255, 0.2),
+        0 0 40px rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.title:hover {
+    text-shadow: 
+        0 0 30px rgba(255, 255, 255, 0.3),
+        0 0 60px rgba(255, 255, 255, 0.2);
 }
 
 .title-normal {
@@ -50,6 +57,7 @@ body {
 .version {
     font-size: 14px;
     margin-left: 8px;
-    opacity: 0.7;
-    font-weight: 300;
+    opacity: 0.6;
+    font-weight: 200;
+    letter-spacing: 1px;
 } 

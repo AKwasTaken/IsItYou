@@ -7,11 +7,11 @@ class TouchRandomizer {
         this.isSelecting = false;
         this.selectionTimeout = null;
         this.animationFrame = null;
-        this.ringColor = '#4CAF50'; // Green ring for touches
-        this.selectedColor = '#FFD700'; // Yellow for selected touch
+        this.ringColor = 'rgba(76, 175, 80, 0.8)'; // Semi-transparent green
+        this.selectedColor = 'rgba(255, 215, 0, 0.9)'; // Semi-transparent yellow
         this.radius = 50;
         this.pulseScale = 1;
-        this.pulseDirection = 0.01;
+        this.pulseDirection = 0.005; // Slower pulse
         this.selectionHighlightTimeout = null;
 
         this.resizeCanvas();
@@ -127,10 +127,17 @@ class TouchRandomizer {
     drawCircle(x, y, color, isSelected = false, touchData) {
         this.ctx.save();
         
-        // Add glow effect for selected touch
+        // Enhanced glow effect
         if (isSelected) {
             this.ctx.shadowColor = this.selectedColor;
-            this.ctx.shadowBlur = 20;
+            this.ctx.shadowBlur = 30;
+            this.ctx.shadowOffsetX = 0;
+            this.ctx.shadowOffsetY = 0;
+        } else {
+            this.ctx.shadowColor = color;
+            this.ctx.shadowBlur = 15;
+            this.ctx.shadowOffsetX = 0;
+            this.ctx.shadowOffsetY = 0;
         }
 
         // Draw the main circle
@@ -138,7 +145,7 @@ class TouchRandomizer {
         const scale = touchData ? touchData.scale : 1;
         this.ctx.arc(x, y, this.radius * scale, 0, Math.PI * 2);
         this.ctx.strokeStyle = color;
-        this.ctx.lineWidth = 3;
+        this.ctx.lineWidth = 2;
         this.ctx.stroke();
         
         if (isSelected) {
@@ -146,13 +153,15 @@ class TouchRandomizer {
             this.ctx.fill();
         }
 
-        // Draw a subtle pulse effect
+        // Draw multiple subtle pulse effects
         if (touchData) {
-            this.ctx.beginPath();
-            this.ctx.arc(x, y, this.radius * (scale + 0.2), 0, Math.PI * 2);
-            this.ctx.strokeStyle = color;
-            this.ctx.globalAlpha = 0.3;
-            this.ctx.stroke();
+            for (let i = 1; i <= 2; i++) {
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, this.radius * (scale + 0.1 * i), 0, Math.PI * 2);
+                this.ctx.strokeStyle = color;
+                this.ctx.globalAlpha = 0.2 / i;
+                this.ctx.stroke();
+            }
         }
 
         this.ctx.restore();
@@ -163,21 +172,21 @@ class TouchRandomizer {
 
         // Update touch animations
         this.touches.forEach((touchData, id) => {
-            // Animate scale and opacity
+            // Smoother scale and opacity animations
             if (touchData.scale < 1) {
-                touchData.scale += 0.1;
+                touchData.scale += 0.05;
             }
             if (touchData.alpha < 1) {
-                touchData.alpha += 0.1;
+                touchData.alpha += 0.05;
             }
             
             const isSelected = this.isSelecting && this.selectedTouch === id;
             this.drawCircle(touchData.x, touchData.y, this.ringColor, isSelected, touchData);
         });
 
-        // Update pulse animation
+        // Smoother pulse animation
         this.pulseScale += this.pulseDirection;
-        if (this.pulseScale > 1.1 || this.pulseScale < 0.9) {
+        if (this.pulseScale > 1.05 || this.pulseScale < 0.95) {
             this.pulseDirection *= -1;
         }
 
