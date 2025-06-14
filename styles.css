@@ -5,10 +5,10 @@
 }
 
 body {
+    background-color: #1a1a2e;
+    font-family: 'Gotham', sans-serif;
     overflow: hidden;
     touch-action: none;
-    background-color: #00001c;
-    font-family: 'Gotham', sans-serif;
 }
 
 #touchCanvas {
@@ -17,7 +17,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    touch-action: none;
+    z-index: 1;
 }
 
 .title {
@@ -97,11 +97,6 @@ body {
     left: 25px;
 }
 
-.fullscreen-btn svg, .refresh-btn svg {
-    fill: rgba(255, 255, 255, 0.8);
-    transition: all 0.3s ease;
-}
-
 .fullscreen-btn:hover, .refresh-btn:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: scale(1.1);
@@ -110,10 +105,19 @@ body {
         0 0 60px rgba(255, 255, 255, 0.1);
 }
 
-.fullscreen-btn:hover svg, .refresh-btn:hover svg {
-    fill: rgba(255, 255, 255, 1);
+.fullscreen-btn:active, .refresh-btn:active {
+    transform: scale(0.95);
 }
 
-.refresh-btn:active svg {
-    transform: rotate(180deg);
+.refresh-btn:active {
+    transform: scale(0.95) rotate(180deg);
+}
+
+.fullscreen-btn svg, .refresh-btn svg {
+    fill: rgba(255, 255, 255, 0.8);
+    transition: all 0.3s ease;
+}
+
+.fullscreen-btn:hover svg, .refresh-btn:hover svg {
+    fill: rgba(255, 255, 255, 1);
 } 

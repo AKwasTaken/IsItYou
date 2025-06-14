@@ -40,6 +40,8 @@ class TouchRandomizer {
     resizeCanvas() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
+        // Set background color
+        document.body.style.backgroundColor = this.colors.background;
     }
 
     setupEventListeners() {
@@ -123,6 +125,8 @@ class TouchRandomizer {
     }
 
     startBlinking() {
+        if (this.touches.size === 0) return;
+        
         this.isBlinking = true;
         this.blinkCount = 0;
         this.blinkAlpha = 0;
