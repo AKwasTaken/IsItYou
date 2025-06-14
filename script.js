@@ -40,15 +40,14 @@ class TouchRandomizer {
     resizeCanvas() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
-        // Set background color
         document.body.style.backgroundColor = this.colors.background;
     }
 
     setupEventListeners() {
         window.addEventListener('resize', () => this.resizeCanvas());
-        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
-        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
-        this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
     }
 
     setupFullscreen() {
