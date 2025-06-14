@@ -13,9 +13,13 @@ class TouchRandomizer {
         this.pulseScale = 1;
         this.pulseDirection = 0.005; // Slower pulse
         this.selectionHighlightTimeout = null;
+        this.selectionFadeTimeout = null;
+        this.restartTimeout = null;
+        this.initialTouchCount = 0;
 
         this.resizeCanvas();
         this.setupEventListeners();
+        this.setupFullscreen();
         this.animate();
     }
 
@@ -31,6 +35,19 @@ class TouchRandomizer {
         this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
     }
 
+    setupFullscreen() {
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+    }
+
     handleTouchStart(e) {
         e.preventDefault();
         Array.from(e.changedTouches).forEach(touch => {
@@ -42,6 +59,7 @@ class TouchRandomizer {
                 alpha: 0.5  // Start with lower opacity for animation
             });
         });
+        this.initialTouchCount = this.touches.size;
         this.startSelectionTimer();
     }
 
@@ -58,39 +76,51 @@ class TouchRandomizer {
 
     handleTouchEnd(e) {
         e.preventDefault();
+        const previousTouchCount = this.touches.size;
+        
         Array.from(e.changedTouches).forEach(touch => {
             this.touches.delete(touch.identifier);
         });
+
+        // If a finger is removed during selection, restart the process
+        if (this.isSelecting && this.touches.size < previousTouchCount) {
+            this.clearAllTimers();
+            if (this.touches.size > 0) {
+                this.startSelectionTimer();
+            }
+        }
+
         if (this.touches.size === 0) {
-            this.clearSelectionTimer();
-            this.clearSelectionHighlight();
+            this.clearAllTimers();
         }
     }
 
-    startSelectionTimer() {
-        if (this.selectionTimeout) {
-            clearTimeout(this.selectionTimeout);
-        }
-        this.selectionTimeout = setTimeout(() => {
-            this.startSelectionAnimation();
-        }, 3000);
-    }
-
-    clearSelectionTimer() {
+    clearAllTimers() {
         if (this.selectionTimeout) {
             clearTimeout(this.selectionTimeout);
             this.selectionTimeout = null;
+        }
+        if (this.selectionHighlightTimeout) {
+            clearTimeout(this.selectionHighlightTimeout);
+            this.selectionHighlightTimeout = null;
+        }
+        if (this.selectionFadeTimeout) {
+            clearTimeout(this.selectionFadeTimeout);
+            this.selectionFadeTimeout = null;
+        }
+        if (this.restartTimeout) {
+            clearTimeout(this.restartTimeout);
+            this.restartTimeout = null;
         }
         this.isSelecting = false;
         this.selectedTouch = null;
     }
 
-    clearSelectionHighlight() {
-        if (this.selectionHighlightTimeout) {
-            clearTimeout(this.selectionHighlightTimeout);
-            this.selectionHighlightTimeout = null;
-        }
-        this.selectedTouch = null;
+    startSelectionTimer() {
+        this.clearAllTimers();
+        this.selectionTimeout = setTimeout(() => {
+            this.startSelectionAnimation();
+        }, 3000);
     }
 
     startSelectionAnimation() {
@@ -107,10 +137,21 @@ class TouchRandomizer {
             if (iterations >= maxIterations) {
                 this.isSelecting = false;
                 this.selectedTouch = touchIds[Math.floor(Math.random() * touchIds.length)];
-                // Keep the selection highlighted for 2 seconds
+                
+                // Keep the selection highlighted for 3 seconds
                 this.selectionHighlightTimeout = setTimeout(() => {
-                    this.clearSelectionHighlight();
-                }, 2000);
+                    // Start fading out
+                    this.selectionFadeTimeout = setTimeout(() => {
+                        this.selectedTouch = null;
+                        
+                        // Wait 6 seconds before starting again if fingers are still present
+                        if (this.touches.size > 0) {
+                            this.restartTimeout = setTimeout(() => {
+                                this.startSelectionTimer();
+                            }, 6000);
+                        }
+                    }, 1000); // Fade out over 1 second
+                }, 3000);
                 return;
             }
 

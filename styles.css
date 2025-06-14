@@ -60,4 +60,36 @@ body {
     opacity: 0.6;
     font-weight: 200;
     letter-spacing: 1px;
+}
+
+.fullscreen-btn {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 0;
+}
+
+.fullscreen-btn svg {
+    fill: rgba(255, 255, 255, 0.8);
+    transition: all 0.3s ease;
+}
+
+.fullscreen-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.fullscreen-btn:hover svg {
+    fill: rgba(255, 255, 255, 1);
 } 
