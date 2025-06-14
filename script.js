@@ -11,7 +11,7 @@ class TouchRandomizer {
         
         // Animation states
         this.isScreenGlowing = false;
-        this.wall = document.querySelector('.wall');
+        this.edgeTexts = document.querySelectorAll('.edge-text');
         this.glowCount = 0;
         this.fadeProgress = 1;
         this.isFading = false;
@@ -116,7 +116,12 @@ class TouchRandomizer {
     startScreenGlow() {
         this.isScreenGlowing = true;
         this.glowCount = 0;
-        this.wall.classList.add('active');
+        this.edgeTexts.forEach(text => {
+            text.classList.add('active');
+            text.style.animation = 'none';
+            text.offsetHeight; // Trigger reflow
+            text.style.animation = null;
+        });
         this.animateGlow();
     }
 
@@ -127,7 +132,7 @@ class TouchRandomizer {
         
         if (this.glowCount >= 3) {
             this.isScreenGlowing = false;
-            this.wall.classList.remove('active');
+            this.edgeTexts.forEach(text => text.classList.remove('active'));
             this.selectRandomTouch();
             return;
         }
@@ -176,7 +181,7 @@ class TouchRandomizer {
     reset() {
         this.clearTimers();
         this.isScreenGlowing = false;
-        this.wall.classList.remove('active');
+        this.edgeTexts.forEach(text => text.classList.remove('active'));
         this.glowCount = 0;
         this.selectedTouch = null;
         this.isFading = false;

@@ -118,48 +118,64 @@ body {
     transform: rotate(180deg);
 }
 
-.wall {
-    position: absolute;
-    width: 200%;
-    height: 200%;
-    transform: rotate(-30deg);
-    transform-origin: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 10px;
-    pointer-events: none;
+.edge-text {
+    position: fixed;
+    white-space: nowrap;
+    font-size: 1.5em;
+    color: rgba(255, 255, 255, 0.3);
     opacity: 0;
     transition: opacity 0.3s ease;
-    top: -50%;
-    left: -50%;
+    pointer-events: none;
 }
 
-.wall.active {
+.edge-text.active {
     opacity: 1;
 }
 
-.line {
-    white-space: nowrap;
-    font-size: 1.5em;
-    animation: scroll 8s linear infinite;
-    color: rgba(255, 255, 255, 0.3);
-    transform: translateX(-100%);
+.top {
+    top: 20px;
+    left: 0;
+    animation: moveRight 3s linear;
 }
 
-/* Phase shifts for the lines */
-.line:nth-child(1) { animation-delay: 0s; }
-.line:nth-child(2) { animation-delay: -0.2s; }
-.line:nth-child(3) { animation-delay: -0.4s; }
-.line:nth-child(4) { animation-delay: -0.6s; }
-.line:nth-child(5) { animation-delay: -0.8s; }
-.line:nth-child(6) { animation-delay: -1.0s; }
-.line:nth-child(7) { animation-delay: -1.2s; }
-.line:nth-child(8) { animation-delay: -1.4s; }
-.line:nth-child(9) { animation-delay: -1.6s; }
-.line:nth-child(10) { animation-delay: -1.8s; }
+.right {
+    top: 0;
+    right: 20px;
+    transform: rotate(90deg);
+    transform-origin: right;
+    animation: moveDown 3s linear;
+}
 
-@keyframes scroll {
+.bottom {
+    bottom: 20px;
+    right: 0;
+    animation: moveLeft 3s linear;
+}
+
+.left {
+    bottom: 0;
+    left: 20px;
+    transform: rotate(90deg);
+    transform-origin: left;
+    animation: moveUp 3s linear;
+}
+
+@keyframes moveRight {
     0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+    100% { transform: translateX(calc(100vw - 100%)); }
+}
+
+@keyframes moveDown {
+    0% { transform: rotate(90deg) translateY(-100%); }
+    100% { transform: rotate(90deg) translateY(calc(100vh - 100%)); }
+}
+
+@keyframes moveLeft {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(calc(-100vw + 100%)); }
+}
+
+@keyframes moveUp {
+    0% { transform: rotate(90deg) translateY(100%); }
+    100% { transform: rotate(90deg) translateY(calc(-100vh + 100%)); }
 } 
