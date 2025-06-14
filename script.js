@@ -61,18 +61,26 @@ class TouchRandomizer {
 
     setupRefresh() {
         const refreshBtn = document.getElementById('refreshBtn');
-        refreshBtn.addEventListener('click', () => this.reset());
+        refreshBtn.addEventListener('click', () => {
+            this.touches.clear();
+            this.reset();
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        });
     }
 
     handleTouchStart(e) {
         e.preventDefault();
+        const currentTime = Date.now();
+        
         Array.from(e.changedTouches).forEach(touch => {
             this.touches.set(touch.identifier, {
                 x: touch.clientX,
-                y: touch.clientY
+                y: touch.clientY,
+                timestamp: currentTime
             });
         });
 
+        // Only start timer if this is a new touch session
         if (this.touches.size === e.changedTouches.length) {
             this.startInitialTimer();
         }
@@ -80,23 +88,38 @@ class TouchRandomizer {
 
     handleTouchMove(e) {
         e.preventDefault();
+        const currentTime = Date.now();
+        
         Array.from(e.changedTouches).forEach(touch => {
             if (this.touches.has(touch.identifier)) {
                 const touchData = this.touches.get(touch.identifier);
                 touchData.x = touch.clientX;
                 touchData.y = touch.clientY;
+                touchData.timestamp = currentTime;
             }
         });
     }
 
     handleTouchEnd(e) {
         e.preventDefault();
+        const currentTime = Date.now();
+        
+        // Remove ended touches
         Array.from(e.changedTouches).forEach(touch => {
             this.touches.delete(touch.identifier);
         });
 
+        // Reset if a finger is lifted
         this.reset();
         
+        // Clean up any stale touches (older than 1 second)
+        this.touches.forEach((touchData, id) => {
+            if (currentTime - touchData.timestamp > 1000) {
+                this.touches.delete(id);
+            }
+        });
+
+        // Restart if there are still valid touches
         if (this.touches.size > 0) {
             this.startInitialTimer();
         }
@@ -201,47 +224,42 @@ class TouchRandomizer {
         if (isSelected) {
             const alpha = this.isFading ? this.selectionAlpha : 1;
             
-            // Create main glow gradient
-            const glowGradient = this.ctx.createRadialGradient(
-                x, y, 0,
-                x, y, 100
-            );
-            
-            glowGradient.addColorStop(0, `rgba(255, 215, 0, ${0.9 * alpha})`);
-            glowGradient.addColorStop(0.3, `rgba(255, 215, 0, ${0.7 * alpha})`);
-            glowGradient.addColorStop(0.6, `rgba(255, 215, 0, ${0.4 * alpha})`);
-            glowGradient.addColorStop(1, `rgba(255, 215, 0, ${0.1 * alpha})`);
-
-            // Draw the glow
+            // Outer glow
             this.ctx.beginPath();
-            this.ctx.arc(x, y, 100, 0, Math.PI * 2);
-            this.ctx.fillStyle = glowGradient;
+            this.ctx.arc(x, y, 90, 0, Math.PI * 2);
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.15 * alpha})`;
             this.ctx.fill();
 
-            // Draw the main circle
+            // Middle glow
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, 70, 0, Math.PI * 2);
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.3 * alpha})`;
+            this.ctx.fill();
+
+            // Inner glow
             this.ctx.beginPath();
             this.ctx.arc(x, y, 50, 0, Math.PI * 2);
-            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.9 * alpha})`;
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.6 * alpha})`;
             this.ctx.fill();
-            
-            // Add a bright center
+
+            // Bright center
             this.ctx.beginPath();
             this.ctx.arc(x, y, 30, 0, Math.PI * 2);
             this.ctx.fillStyle = `rgba(255, 255, 255, ${0.3 * alpha})`;
             this.ctx.fill();
         } else {
             // Regular circle with subtle glow
-            const regularGradient = this.ctx.createRadialGradient(
-                x, y, 40,
-                x, y, 60
-            );
-            regularGradient.addColorStop(0, 'rgba(76, 175, 80, 0.8)');
-            regularGradient.addColorStop(1, 'rgba(76, 175, 80, 0)');
-
             this.ctx.beginPath();
             this.ctx.arc(x, y, 50, 0, Math.PI * 2);
-            this.ctx.strokeStyle = regularGradient;
+            this.ctx.strokeStyle = 'rgba(76, 175, 80, 0.8)';
             this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+
+            // Subtle outer glow
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, 55, 0, Math.PI * 2);
+            this.ctx.strokeStyle = 'rgba(76, 175, 80, 0.3)';
+            this.ctx.lineWidth = 1;
             this.ctx.stroke();
         }
 
