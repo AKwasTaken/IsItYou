@@ -18,6 +18,10 @@ class TouchRandomizer {
         this.initialTouchCount = 0;
         this.isFading = false;
         this.fadeProgress = 1;
+        this.cyclingIndex = 0;
+        this.cyclingIterations = 0;
+        this.maxCyclingIterations = 10;
+        this.cyclingDelay = 200;
 
         this.resizeCanvas();
         this.setupEventListeners();
@@ -117,7 +121,7 @@ class TouchRandomizer {
         });
 
         // If a finger is removed during selection, restart the process
-        if (this.isSelecting && this.touches.size < previousTouchCount) {
+        if ((this.isSelecting || this.selectedTouch !== null) && this.touches.size < previousTouchCount) {
             this.clearAllTimers();
             if (this.touches.size > 0) {
                 this.startSelectionTimer();
@@ -148,47 +152,48 @@ class TouchRandomizer {
         }
         this.isSelecting = false;
         this.selectedTouch = null;
+        this.isFading = false;
+        this.fadeProgress = 1;
     }
 
     startSelectionTimer() {
         this.clearAllTimers();
         this.selectionTimeout = setTimeout(() => {
-            this.startSelectionAnimation();
+            this.startCyclingAnimation();
         }, 3000);
     }
 
-    startSelectionAnimation() {
+    startCyclingAnimation() {
         if (this.touches.size === 0) return;
         
         this.isSelecting = true;
+        this.cyclingIndex = 0;
+        this.cyclingIterations = 0;
         const touchIds = Array.from(this.touches.keys());
-        let currentIndex = 0;
-        let iterations = 0;
-        const maxIterations = 10;
-        const delay = 200;
-
-        const animate = () => {
-            if (iterations >= maxIterations) {
+        
+        const cycle = () => {
+            if (this.cyclingIterations >= this.maxCyclingIterations) {
+                // End cycling and select final touch
                 this.isSelecting = false;
                 this.selectedTouch = touchIds[Math.floor(Math.random() * touchIds.length)];
                 this.isFading = false;
                 this.fadeProgress = 1;
                 
-                // Keep the selection highlighted for 3 seconds
+                // Keep selection highlighted for 3 seconds
                 this.selectionHighlightTimeout = setTimeout(() => {
-                    // Start fading out
+                    // Start fade out
                     this.isFading = true;
                     this.fadeProgress = 1;
                     
                     const fadeOut = () => {
                         if (this.fadeProgress > 0) {
-                            this.fadeProgress -= 0.05;
+                            this.fadeProgress -= 0.02; // Slower fade
                             requestAnimationFrame(fadeOut);
                         } else {
                             this.selectedTouch = null;
                             this.isFading = false;
                             
-                            // Wait 6 seconds before starting again if fingers are still present
+                            // Wait 6 seconds before next selection
                             if (this.touches.size > 0) {
                                 this.restartTimeout = setTimeout(() => {
                                     this.startSelectionTimer();
@@ -202,14 +207,17 @@ class TouchRandomizer {
                 return;
             }
 
-            this.selectedTouch = touchIds[currentIndex];
-            currentIndex = (currentIndex + 1) % touchIds.length;
-            iterations++;
+            // Update cycling index
+            this.selectedTouch = touchIds[this.cyclingIndex];
+            this.cyclingIndex = (this.cyclingIndex + 1) % touchIds.length;
+            this.cyclingIterations++;
 
-            setTimeout(animate, delay);
+            // Schedule next cycle
+            setTimeout(cycle, this.cyclingDelay);
         };
 
-        animate();
+        // Start cycling
+        cycle();
     }
 
     drawCircle(x, y, color, isSelected = false, touchData) {
