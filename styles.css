@@ -67,10 +67,8 @@ body {
     letter-spacing: 2px;
 }
 
-.fullscreen-btn {
+.fullscreen-btn, .refresh-btn {
     position: fixed;
-    bottom: 25px;
-    right: 25px;
     z-index: 1000;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -89,12 +87,22 @@ body {
         0 0 40px rgba(255, 255, 255, 0.05);
 }
 
-.fullscreen-btn svg {
+.fullscreen-btn {
+    bottom: 25px;
+    right: 25px;
+}
+
+.refresh-btn {
+    bottom: 25px;
+    left: 25px;
+}
+
+.fullscreen-btn svg, .refresh-btn svg {
     fill: rgba(255, 255, 255, 0.8);
     transition: all 0.3s ease;
 }
 
-.fullscreen-btn:hover {
+.fullscreen-btn:hover, .refresh-btn:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: scale(1.1);
     box-shadow: 
@@ -102,6 +110,10 @@ body {
         0 0 60px rgba(255, 255, 255, 0.1);
 }
 
-.fullscreen-btn:hover svg {
+.fullscreen-btn:hover svg, .refresh-btn:hover svg {
     fill: rgba(255, 255, 255, 1);
+}
+
+.refresh-btn:active svg {
+    transform: rotate(180deg);
 } 
