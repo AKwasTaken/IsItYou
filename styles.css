@@ -23,22 +23,26 @@ body {
 .title {
     position: fixed;
     top: 25px;
-    left: 25px;
+    right: 25px;
     z-index: 1000;
     color: rgba(255, 255, 255, 0.95);
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 300;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
     text-shadow: 
-        0 0 20px rgba(255, 255, 255, 0.2),
-        0 0 40px rgba(255, 255, 255, 0.1);
+        0 0 30px rgba(255, 255, 255, 0.3),
+        0 0 60px rgba(255, 255, 255, 0.2),
+        0 0 90px rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
+    text-align: right;
 }
 
 .title:hover {
     text-shadow: 
-        0 0 30px rgba(255, 255, 255, 0.3),
-        0 0 60px rgba(255, 255, 255, 0.2);
+        0 0 40px rgba(255, 255, 255, 0.4),
+        0 0 80px rgba(255, 255, 255, 0.3),
+        0 0 120px rgba(255, 255, 255, 0.2);
+    transform: scale(1.02);
 }
 
 .title-normal {
@@ -55,11 +59,12 @@ body {
 }
 
 .version {
-    font-size: 14px;
-    margin-left: 8px;
-    opacity: 0.6;
+    display: block;
+    font-size: 16px;
+    margin-top: 4px;
+    opacity: 0.7;
     font-weight: 200;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
 }
 
 .fullscreen-btn {
@@ -78,6 +83,10 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     padding: 0;
+    backdrop-filter: blur(5px);
+    box-shadow: 
+        0 0 20px rgba(255, 255, 255, 0.1),
+        0 0 40px rgba(255, 255, 255, 0.05);
 }
 
 .fullscreen-btn svg {
@@ -88,6 +97,9 @@ body {
 .fullscreen-btn:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: scale(1.1);
+    box-shadow: 
+        0 0 30px rgba(255, 255, 255, 0.2),
+        0 0 60px rgba(255, 255, 255, 0.1);
 }
 
 .fullscreen-btn:hover svg {
