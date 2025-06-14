@@ -15,14 +15,14 @@ class TouchRandomizer {
         this.glowDirection = 1;
         this.glowCount = 0;
         
-        // Fade states
-        this.fadeProgress = 1;
+        // Selection states
+        this.isSelecting = false;
+        this.selectionAlpha = 1;
         this.isFading = false;
         
         // Timers
         this.initialTimer = null;
         this.selectionTimer = null;
-        this.fadeTimer = null;
 
         // Setup
         this.setupEventListeners();
@@ -73,7 +73,6 @@ class TouchRandomizer {
             });
         });
 
-        // Start the initial timer if this is the first touch
         if (this.touches.size === e.changedTouches.length) {
             this.startInitialTimer();
         }
@@ -96,10 +95,8 @@ class TouchRandomizer {
             this.touches.delete(touch.identifier);
         });
 
-        // Reset everything if a finger is lifted
         this.reset();
         
-        // Restart if there are still fingers
         if (this.touches.size > 0) {
             this.startInitialTimer();
         }
@@ -148,37 +145,43 @@ class TouchRandomizer {
 
         const touchIds = Array.from(this.touches.keys());
         this.selectedTouch = touchIds[Math.floor(Math.random() * touchIds.length)];
+        this.isSelecting = true;
+        this.selectionAlpha = 1;
         this.isFading = false;
-        this.fadeProgress = 1;
 
-        // Keep selection for 3 seconds
         this.selectionTimer = setTimeout(() => {
-            this.isFading = true;
-            this.fadeProgress = 1;
-            
-            const fadeOut = () => {
-                if (this.fadeProgress > 0) {
-                    this.fadeProgress -= 0.02;
-                    requestAnimationFrame(fadeOut);
-                } else {
-                    this.selectedTouch = null;
-                    this.isFading = false;
-                    this.fadeProgress = 1;
-                    
-                    if (this.touches.size > 0) {
-                        this.startInitialTimer();
-                    }
-                }
-            };
-            
-            requestAnimationFrame(fadeOut);
+            this.startFadeOut();
         }, 3000);
+    }
+
+    startFadeOut() {
+        this.isFading = true;
+        this.animateFadeOut();
+    }
+
+    animateFadeOut() {
+        if (!this.isFading) return;
+
+        this.selectionAlpha -= 0.02;
+
+        if (this.selectionAlpha <= 0) {
+            this.selectionAlpha = 0;
+            this.isFading = false;
+            this.selectedTouch = null;
+            this.isSelecting = false;
+            
+            if (this.touches.size > 0) {
+                this.startInitialTimer();
+            }
+            return;
+        }
+
+        requestAnimationFrame(() => this.animateFadeOut());
     }
 
     clearTimers() {
         if (this.initialTimer) clearTimeout(this.initialTimer);
         if (this.selectionTimer) clearTimeout(this.selectionTimer);
-        if (this.fadeTimer) clearTimeout(this.fadeTimer);
     }
 
     reset() {
@@ -187,56 +190,50 @@ class TouchRandomizer {
         this.screenGlowAlpha = 0;
         this.glowCount = 0;
         this.selectedTouch = null;
+        this.isSelecting = false;
+        this.selectionAlpha = 1;
+        this.isFading = false;
     }
 
     drawCircle(x, y, isSelected) {
         this.ctx.save();
         
         if (isSelected) {
-            const fadeIntensity = this.isFading ? this.fadeProgress : 1;
+            const alpha = this.isFading ? this.selectionAlpha : 1;
             
-            // Create gradient for the glow
-            const gradient = this.ctx.createRadialGradient(
-                x, y, 30,  // Inner circle
-                x, y, 90   // Outer circle
+            // Create main glow gradient
+            const glowGradient = this.ctx.createRadialGradient(
+                x, y, 0,
+                x, y, 100
             );
             
-            // Add gradient stops with fade
-            gradient.addColorStop(0, `rgba(255, 215, 0, ${0.9 * fadeIntensity})`);
-            gradient.addColorStop(0.4, `rgba(255, 215, 0, ${0.6 * fadeIntensity})`);
-            gradient.addColorStop(0.7, `rgba(255, 215, 0, ${0.3 * fadeIntensity})`);
-            gradient.addColorStop(1, `rgba(255, 215, 0, ${0.1 * fadeIntensity})`);
+            glowGradient.addColorStop(0, `rgba(255, 215, 0, ${0.9 * alpha})`);
+            glowGradient.addColorStop(0.3, `rgba(255, 215, 0, ${0.7 * alpha})`);
+            glowGradient.addColorStop(0.6, `rgba(255, 215, 0, ${0.4 * alpha})`);
+            glowGradient.addColorStop(1, `rgba(255, 215, 0, ${0.1 * alpha})`);
 
-            // Draw the gradient glow
+            // Draw the glow
             this.ctx.beginPath();
-            this.ctx.arc(x, y, 90, 0, Math.PI * 2);
-            this.ctx.fillStyle = gradient;
+            this.ctx.arc(x, y, 100, 0, Math.PI * 2);
+            this.ctx.fillStyle = glowGradient;
             this.ctx.fill();
 
-            // Add a subtle inner glow
-            const innerGradient = this.ctx.createRadialGradient(
-                x, y, 0,    // Inner circle
-                x, y, 50    // Outer circle
-            );
-            innerGradient.addColorStop(0, `rgba(255, 255, 255, ${0.3 * fadeIntensity})`);
-            innerGradient.addColorStop(1, `rgba(255, 215, 0, ${0.1 * fadeIntensity})`);
-
+            // Draw the main circle
             this.ctx.beginPath();
             this.ctx.arc(x, y, 50, 0, Math.PI * 2);
-            this.ctx.fillStyle = innerGradient;
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.9 * alpha})`;
             this.ctx.fill();
-
-            // Add a subtle outer ring
+            
+            // Add a bright center
             this.ctx.beginPath();
-            this.ctx.arc(x, y, 50, 0, Math.PI * 2);
-            this.ctx.strokeStyle = `rgba(255, 215, 0, ${0.8 * fadeIntensity})`;
-            this.ctx.lineWidth = 2;
-            this.ctx.stroke();
+            this.ctx.arc(x, y, 30, 0, Math.PI * 2);
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${0.3 * alpha})`;
+            this.ctx.fill();
         } else {
             // Regular circle with subtle glow
             const regularGradient = this.ctx.createRadialGradient(
-                x, y, 40,   // Inner circle
-                x, y, 50    // Outer circle
+                x, y, 40,
+                x, y, 60
             );
             regularGradient.addColorStop(0, 'rgba(76, 175, 80, 0.8)');
             regularGradient.addColorStop(1, 'rgba(76, 175, 80, 0)');
