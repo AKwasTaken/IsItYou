@@ -11,7 +11,8 @@ class TouchRandomizer {
         
         // Animation states
         this.isScreenGlowing = false;
-        this.edgeTexts = document.querySelectorAll('.edge-text');
+        this.screenGlowAlpha = 0;
+        this.glowDirection = 1;
         this.glowCount = 0;
         this.fadeProgress = 1;
         this.isFading = false;
@@ -20,7 +21,6 @@ class TouchRandomizer {
         this.initialTimer = null;
         this.selectionTimer = null;
         this.fadeTimer = null;
-        this.animationTimer = null;
 
         // Setup
         this.setupEventListeners();
@@ -117,33 +117,32 @@ class TouchRandomizer {
     startScreenGlow() {
         this.isScreenGlowing = true;
         this.glowCount = 0;
-        this.runAnimation();
+        this.screenGlowAlpha = 0;
+        this.glowDirection = 1;
+        this.animateGlow();
     }
 
-    runAnimation() {
+    animateGlow() {
         if (!this.isScreenGlowing) return;
 
-        // Reset and start animation
-        this.edgeTexts.forEach(text => {
-            text.classList.remove('active');
-            text.style.animation = 'none';
-            text.offsetHeight; // Trigger reflow
-            text.classList.add('active');
-            text.style.animation = null;
-        });
+        this.screenGlowAlpha += 0.05 * this.glowDirection;
 
-        this.glowCount++;
-        
-        if (this.glowCount >= 3) {
-            this.isScreenGlowing = false;
-            setTimeout(() => {
-                this.edgeTexts.forEach(text => text.classList.remove('active'));
+        if (this.screenGlowAlpha >= 1) {
+            this.screenGlowAlpha = 1;
+            this.glowDirection = -1;
+        } else if (this.screenGlowAlpha <= 0) {
+            this.screenGlowAlpha = 0;
+            this.glowDirection = 1;
+            this.glowCount++;
+
+            if (this.glowCount >= 3) {
+                this.isScreenGlowing = false;
                 this.selectRandomTouch();
-            }, 1000);
-            return;
+                return;
+            }
         }
 
-        this.animationTimer = setTimeout(() => this.runAnimation(), 1000);
+        requestAnimationFrame(() => this.animateGlow());
     }
 
     selectRandomTouch() {
@@ -182,13 +181,12 @@ class TouchRandomizer {
         if (this.initialTimer) clearTimeout(this.initialTimer);
         if (this.selectionTimer) clearTimeout(this.selectionTimer);
         if (this.fadeTimer) clearTimeout(this.fadeTimer);
-        if (this.animationTimer) clearTimeout(this.animationTimer);
     }
 
     reset() {
         this.clearTimers();
         this.isScreenGlowing = false;
-        this.edgeTexts.forEach(text => text.classList.remove('active'));
+        this.screenGlowAlpha = 0;
         this.glowCount = 0;
         this.selectedTouch = null;
         this.isFading = false;
@@ -231,6 +229,14 @@ class TouchRandomizer {
 
     animate() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw screen glow
+        if (this.isScreenGlowing) {
+            this.ctx.save();
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${0.2 * this.screenGlowAlpha})`;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.restore();
+        }
 
         // Draw touches
         this.touches.forEach((touchData, id) => {
