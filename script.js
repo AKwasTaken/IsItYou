@@ -20,6 +20,7 @@ class TouchRandomizer {
         this.initialTimer = null;
         this.selectionTimer = null;
         this.fadeTimer = null;
+        this.animationTimer = null;
 
         // Setup
         this.setupEventListeners();
@@ -116,28 +117,33 @@ class TouchRandomizer {
     startScreenGlow() {
         this.isScreenGlowing = true;
         this.glowCount = 0;
-        this.edgeTexts.forEach(text => {
-            text.classList.add('active');
-            text.style.animation = 'none';
-            text.offsetHeight; // Trigger reflow
-            text.style.animation = null;
-        });
-        this.animateGlow();
+        this.runAnimation();
     }
 
-    animateGlow() {
+    runAnimation() {
         if (!this.isScreenGlowing) return;
+
+        // Reset and start animation
+        this.edgeTexts.forEach(text => {
+            text.classList.remove('active');
+            text.style.animation = 'none';
+            text.offsetHeight; // Trigger reflow
+            text.classList.add('active');
+            text.style.animation = null;
+        });
 
         this.glowCount++;
         
         if (this.glowCount >= 3) {
             this.isScreenGlowing = false;
-            this.edgeTexts.forEach(text => text.classList.remove('active'));
-            this.selectRandomTouch();
+            setTimeout(() => {
+                this.edgeTexts.forEach(text => text.classList.remove('active'));
+                this.selectRandomTouch();
+            }, 1000);
             return;
         }
 
-        setTimeout(() => this.animateGlow(), 1000);
+        this.animationTimer = setTimeout(() => this.runAnimation(), 1000);
     }
 
     selectRandomTouch() {
@@ -176,6 +182,7 @@ class TouchRandomizer {
         if (this.initialTimer) clearTimeout(this.initialTimer);
         if (this.selectionTimer) clearTimeout(this.selectionTimer);
         if (this.fadeTimer) clearTimeout(this.fadeTimer);
+        if (this.animationTimer) clearTimeout(this.animationTimer);
     }
 
     reset() {
