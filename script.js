@@ -26,7 +26,6 @@ class TouchRandomizer {
         // Setup
         this.setupEventListeners();
         this.setupFullscreen();
-        this.setupRefresh();
         this.animate();
     }
 
@@ -56,15 +55,6 @@ class TouchRandomizer {
         } else {
             fullscreenBtn.style.display = 'none';
         }
-    }
-
-    setupRefresh() {
-        const refreshBtn = document.getElementById('refreshBtn');
-        refreshBtn.addEventListener('click', () => {
-            this.touches.clear();
-            this.reset();
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        });
     }
 
     handleTouchStart(e) {
