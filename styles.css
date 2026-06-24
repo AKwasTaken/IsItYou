@@ -1,3 +1,5 @@
+@import url('/css/style.css');
+
 * {
     margin: 0;
     padding: 0;
@@ -7,8 +9,7 @@
 body {
     overflow: hidden;
     touch-action: none;
-    background-color: #00001c;
-    font-family: 'Gotham', sans-serif;
+    background-color: var(--background-color);
 }
 
 #touchCanvas {
@@ -20,12 +21,12 @@ body {
     touch-action: none;
 }
 
-.title {
+.title-main {
     position: fixed;
     top: 25px;
     right: 25px;
     z-index: 1000;
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--accent-main);
     font-size: 32px;
     font-weight: 300;
     letter-spacing: 3px;
@@ -35,14 +36,6 @@ body {
         0 0 90px rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
     text-align: right;
-}
-
-.title:hover {
-    text-shadow: 
-        0 0 40px rgba(255, 255, 255, 0.4),
-        0 0 80px rgba(255, 255, 255, 0.3),
-        0 0 120px rgba(255, 255, 255, 0.2);
-    transform: scale(1.02);
 }
 
 .title-normal {
@@ -98,12 +91,12 @@ body {
 }
 
 .fullscreen-btn svg, .refresh-btn svg {
-    fill: rgba(255, 255, 255, 0.8);
+    fill: rgba(0, 0, 0, 0.8);
     transition: all 0.3s ease;
 }
 
 .fullscreen-btn:hover, .refresh-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--accent-main);
     transform: scale(1.1);
     box-shadow: 
         0 0 30px rgba(255, 255, 255, 0.2),
@@ -111,7 +104,7 @@ body {
 }
 
 .fullscreen-btn:hover svg, .refresh-btn:hover svg {
-    fill: rgba(255, 255, 255, 1);
+    fill: var(--background-color);
 }
 
 .refresh-btn:active svg {
