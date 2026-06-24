@@ -14,6 +14,8 @@ A lightweight, responsive web application designed for touch-capable devices tha
 * **Control UI**: Includes explicit UI toggles for full-screen mode and manual canvas state resets.
 * **State Management**: Resets the selection state immediately if any finger is removed prematurely during the countdown.
 
+<img src="assets/isityou.png" style="border-radius: 30px">
+
 ---
 
 ## Technical Architecture
