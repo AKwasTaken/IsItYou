@@ -78,6 +78,7 @@ class TouchRandomizer {
         // Reset all timers and selection/glow states when a new finger is added
         this.reset();
 
+        // Register the new touch inputs
         Array.from(e.changedTouches).forEach(touch => {
             this.touches.set(touch.identifier, {
                 x: touch.clientX,
@@ -85,8 +86,8 @@ class TouchRandomizer {
             });
         });
 
-        // Start the initial timer for the updated group of fingers
-        if (this.touches.size === e.changedTouches.length) {
+        // Start the initial timer unconditionally if there are fingers on the screen
+        if (this.touches.size > 0) {
             this.startInitialTimer();
         }
     }
