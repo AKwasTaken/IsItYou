@@ -1,6 +1,7 @@
 class TouchRandomizer {
     constructor() {
         // Canvas setup
+        this.instructions = document.querySelector('.instructions');
         this.canvas = document.getElementById('touchCanvas');
         this.ctx = this.canvas.getContext('2d');
         this.resizeCanvas();
@@ -68,6 +69,15 @@ class TouchRandomizer {
 
     handleTouchStart(e) {
         e.preventDefault();
+
+        // Hide the instructions on the very first touch
+        if (this.instructions) {
+            this.instructions.classList.add('hidden');
+        }
+
+        // Reset all timers and selection/glow states when a new finger is added
+        this.reset();
+
         Array.from(e.changedTouches).forEach(touch => {
             this.touches.set(touch.identifier, {
                 x: touch.clientX,
@@ -75,7 +85,7 @@ class TouchRandomizer {
             });
         });
 
-        // Start the initial timer if this is the first touch
+        // Start the initial timer for the updated group of fingers
         if (this.touches.size === e.changedTouches.length) {
             this.startInitialTimer();
         }

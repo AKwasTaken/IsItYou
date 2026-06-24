@@ -38,19 +38,6 @@ body {
     text-align: right;
 }
 
-.title-normal {
-    font-weight: 400;
-}
-
-.title-bold {
-    font-weight: 700;
-}
-
-.title-italic {
-    font-style: italic;
-    font-weight: 500;
-}
-
 .version {
     display: block;
     font-size: 16px;
@@ -58,6 +45,37 @@ body {
     opacity: 0.7;
     font-weight: 200;
     letter-spacing: 2px;
+}
+
+
+
+.instructions {
+    max-width: 500px;
+
+    font-size: 2rem;
+    position: fixed;
+    text-align: center;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--accent-main);
+
+    font-weight: 300;
+    letter-spacing: 1px;
+
+    opacity: 0.3;
+    pointer-events: none;
+
+    transition: opacity 0.3s ease;
+}
+
+.instructions.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.instructions p {
+    margin: 1rem 0;
 }
 
 .fullscreen-btn, .refresh-btn {
